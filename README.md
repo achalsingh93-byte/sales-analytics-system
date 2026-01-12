@@ -1,3 +1,7 @@
+Name:Achal Singh  
+Email ID: achalsingh93@gmail.com  
+BITSoM Student ID: BITSOM_BA_25071618
+
 # Sales Analytics System
 
 ## Overview
