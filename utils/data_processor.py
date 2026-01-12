@@ -213,3 +213,173 @@ def validate_and_filter(transactions, region=None, min_amount=None, max_amount=N
     }
 
     return filtered_transactions, invalid_count, summary
+def calculate_total_revenue(transactions):
+    """
+    Calculates total revenue from all transactions
+    Returns: float
+    """
+    total_revenue = 0.0
+
+    for txn in transactions:
+        total_revenue += txn["Quantity"] * txn["UnitPrice"]
+
+    return total_revenue
+def region_wise_sales(transactions):
+    """
+    Calculates region-wise sales summary.
+    Returns a list of dictionaries sorted by revenue descending.
+    """
+    region_summary = {}
+    total_revenue = 0.0
+
+    for txn in transactions:
+        total_revenue += txn["Quantity"] * txn["UnitPrice"]
+
+    for txn in transactions:
+        region = txn["Region"]
+
+        # Skip empty region
+        if not region:
+            continue
+
+        revenue = txn["Quantity"] * txn["UnitPrice"]
+
+        if region not in region_summary:
+            region_summary[region] = {
+                "Region": region,
+                "Revenue": 0.0,
+                "Transactions": 0
+            }
+
+        region_summary[region]["Revenue"] += revenue
+        region_summary[region]["Transactions"] += 1
+
+    result = []
+    for data in region_summary.values():
+        percentage = (
+            (data["Revenue"] / total_revenue) * 100
+            if total_revenue > 0 else 0
+        )
+        data["Percentage"] = round(percentage, 2)
+        result.append(data)
+
+    result.sort(key=lambda x: x["Revenue"], reverse=True)
+    return result
+def top_selling_products(transactions, top_n=5):
+    """
+    Returns top N selling products by quantity.
+    """
+    product_summary = {}
+
+    for txn in transactions:
+        product = txn["ProductName"]
+        quantity = txn["Quantity"]
+        revenue = txn["Quantity"] * txn["UnitPrice"]
+
+        if product not in product_summary:
+            product_summary[product] = {
+                "ProductName": product,
+                "TotalQuantity": 0,
+                "Revenue": 0.0
+            }
+
+        product_summary[product]["TotalQuantity"] += quantity
+        product_summary[product]["Revenue"] += revenue
+
+    result = list(product_summary.values())
+    result.sort(key=lambda x: x["TotalQuantity"], reverse=True)
+
+    return result[:top_n]
+def customer_analysis(transactions):
+    """
+    Performs customer-wise analysis and segmentation.
+    Returns a list of customer summaries.
+    """
+    customer_summary = {}
+
+    for txn in transactions:
+        customer = txn["CustomerID"]
+        spend = txn["Quantity"] * txn["UnitPrice"]
+
+        if customer not in customer_summary:
+            customer_summary[customer] = {
+                "CustomerID": customer,
+                "TotalSpend": 0.0,
+                "Transactions": 0
+            }
+
+        customer_summary[customer]["TotalSpend"] += spend
+        customer_summary[customer]["Transactions"] += 1
+
+    result = []
+    for data in customer_summary.values():
+        if data["TotalSpend"] >= 50000:
+            segment = "High Value"
+        elif data["TotalSpend"] >= 10000:
+            segment = "Medium Value"
+        else:
+            segment = "Low Value"
+
+        data["Segment"] = segment
+        result.append(data)
+
+    return result
+def daily_sales_trend(transactions):
+    """
+    Calculates daily sales revenue.
+    Returns a dictionary with Date as key and TotalRevenue as value.
+    """
+    daily_sales = {}
+
+    for txn in transactions:
+        date = txn["Date"]
+        revenue = txn["Quantity"] * txn["UnitPrice"]
+
+        if date not in daily_sales:
+            daily_sales[date] = 0.0
+
+        daily_sales[date] += revenue
+
+    return daily_sales
+def find_peak_sales_day(daily_sales):
+    """
+    Identifies the day with the highest sales.
+    Returns a tuple (date, revenue).
+    """
+    if not daily_sales:
+        return None, 0.0
+
+    peak_date = max(daily_sales, key=daily_sales.get)
+    peak_revenue = daily_sales[peak_date]
+
+    return peak_date, peak_revenue
+def low_performing_products(transactions, threshold=10):
+    """
+    Identifies products with total quantity sold below the given threshold.
+    Returns a list of product summaries.
+    """
+    product_summary = {}
+
+    for txn in transactions:
+        product = txn["ProductName"]
+        quantity = txn["Quantity"]
+        revenue = txn["Quantity"] * txn["UnitPrice"]
+
+        if product not in product_summary:
+            product_summary[product] = {
+                "ProductName": product,
+                "TotalQuantity": 0,
+                "Revenue": 0.0
+            }
+
+        product_summary[product]["TotalQuantity"] += quantity
+        product_summary[product]["Revenue"] += revenue
+
+    low_products = [
+        data for data in product_summary.values()
+        if data["TotalQuantity"] < threshold
+    ]
+
+    return low_products
+
+

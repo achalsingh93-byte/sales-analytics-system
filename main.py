@@ -1,21 +1,26 @@
 from utils.file_handler import read_sales_data
-from utils.data_processor import parse_transactions, validate_and_filter
+from utils.data_processor import (
+    parse_transactions,
+    low_performing_products
+)
 
 def main():
-    print("Running Sales Analytics System (Q2)...")
-
-    file_path = "data/sales_data.txt"
-
-    raw_lines = read_sales_data(file_path)
+    raw_lines = read_sales_data("data/sales_data.txt")
     transactions = parse_transactions(raw_lines)
 
-    valid_txns, invalid_count, summary = validate_and_filter(transactions)
+    low_products = low_performing_products(transactions, threshold=10)
 
-    print("\nFinal Summary:")
-    print(summary)
+    print("Low Performing Products:")
+    for p in low_products:
+        print(p)
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
 
 
 
