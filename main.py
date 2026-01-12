@@ -1,23 +1,22 @@
-from utils.file_handler import read_sales_file
-from utils.data_processor import (
-    parse_sales_lines,
-    clean_sales_records,
-    validate_sales_records
-)
+from utils.file_handler import read_sales_data
+from utils.data_processor import parse_transactions, validate_and_filter
 
 def main():
-    print("Starting Sales Analytics System...")
+    print("Running Sales Analytics System (Q2)...")
 
     file_path = "data/sales_data.txt"
 
-    lines = read_sales_file(file_path)
-    parsed_records = parse_sales_lines(lines)
-    cleaned_records = clean_sales_records(parsed_records)
-    valid_records, invalid_count = validate_sales_records(cleaned_records)
+    raw_lines = read_sales_data(file_path)
+    transactions = parse_transactions(raw_lines)
 
-    print(f"Total records parsed: {len(parsed_records)}")
-    print(f"Invalid records removed: {invalid_count}")
-    print(f"Valid records after cleaning: {len(valid_records)}")
+    valid_txns, invalid_count, summary = validate_and_filter(transactions)
+
+    print("\nFinal Summary:")
+    print(summary)
 
 if __name__ == "__main__":
     main()
+
+
+
+
