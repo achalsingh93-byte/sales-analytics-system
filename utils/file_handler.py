@@ -53,3 +53,18 @@ def read_sales_data(filename):
 
     print("ERROR: Unable to read file with supported encodings.")
     return []
+import csv
+
+def save_enriched_data(enriched_transactions, filename):
+    """
+    Saves enriched sales data to a CSV file.
+    """
+    if not enriched_transactions:
+        return
+
+    fieldnames = enriched_transactions[0].keys()
+
+    with open(filename, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(enriched_transactions)
