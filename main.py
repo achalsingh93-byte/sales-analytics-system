@@ -1,82 +1,99 @@
+from utils.data_processor import (
+    read_sales_data,
+    parse_transactions,
+    validate_and_filter,
+    region_wise_sales,
+    top_selling_products,
+    customer_analysis
+)
+from utils.api_handler import fetch_all_products
+from utils.report_generator import (
+    create_report_file,
+    write_region_summary,
+    write_top_products,
+    write_customer_segments,
+    write_peak_sales_day
+)
+
+
 def main():
-    try:
-        print("=" * 40)
-        print("SALES ANALYTICS SYSTEM")
-        print("=" * 40)
+    print("=" * 50)
+    print("SALES ANALYTICS SYSTEM – END TO END PIPELINE")
+    print("=" * 50)
 
-        print("[1/10] Initializing system...")
+    # [1/10] Read raw sales data
+    print("[1/10] Reading sales data file...")
+    raw_lines = read_sales_data("data/sales_data.txt")
 
-        print("[2/10] Reading sales data file...")
-        from utils.file_handler import read_sales_data
-        raw_lines = read_sales_data("data/sales_data.txt")
-        print(f"      Lines read (including header): {len(raw_lines)}")
+    # [2/10] Parse transactions
+    print("[2/10] Parsing transactions...")
+    transactions = parse_transactions(raw_lines)
 
-        print("[3/10] Parsing transactions...")
-        from utils.data_processor import parse_transactions
-        transactions = parse_transactions(raw_lines)
-        print(f"      Parsed transactions: {len(transactions)}")
-        print("[4/10] Applying validation & filters...")
+    # [3/10] User-driven filters
+    min_amount = input("Enter minimum transaction amount (or press Enter to skip): ")
+    min_amount = float(min_amount) if min_amount else None
 
-        from utils.data_processor import validate_and_filter
+    region = input("Enter region filter (East/West/North/South or press Enter to skip): ")
+    region = region if region else None
 
-        # User inputs (optional)
-        region_input = input("Enter region to filter (or press Enter to skip): ").strip()
-        region = region_input if region_input else None
+    # [4/10] Validate & filter
+    print("[3/10] Validating and filtering transactions...")
+    valid_txns, invalid_count, summary = validate_and_filter(
+        transactions,
+        region=region,
+        min_amount=min_amount
+    )
 
-        min_amount_input = input("Enter minimum transaction amount (or press Enter to skip): ").strip()
-        min_amount = float(min_amount_input) if min_amount_input else None
+    print("Filter Summary:", summary)
 
-        filtered_transactions, invalid_count, summary = validate_and_filter(
-            transactions,
-            region=region,
-            min_amount=min_amount
-        )
+    # [5/10] Fetch product data from API
+    print("[4/10] Fetching product data from API...")
+    products = fetch_all_products()
 
-        print("      Filter Summary:")
-        print(f"         Total Input: {summary.get('total_input')}")
-        print(f"         Invalid Records: {invalid_count}")
-        print(f"         Final Valid Transactions: {summary.get('final_count')}")
-        print("[5/10] Fetching product data from API...")
-        from utils.api_handler import (
-            fetch_all_products,
-            create_product_mapping,
-            enrich_sales_data
-        )
+    # [6/10] Enrich transactions
+    print("[5/10] Enriching transactions with product data...")
+    product_map = {p["id"]: p for p in products}
 
-        api_products = fetch_all_products()
-        product_map = create_product_mapping(api_products)
-        print(f"      API products fetched: {len(api_products)}")
+    enriched = []
+    for txn in valid_txns:
+        product = product_map.get(txn["ProductID"], {})
+        txn.update({
+            "ProductTitle": product.get("title"),
+            "Category": product.get("category"),
+            "Brand": product.get("brand"),
+            "API_Price": product.get("price"),
+            "Rating": product.get("rating")
+        })
+        enriched.append(txn)
 
-        print("[6/10] Enriching transactions with product data...")
-        enriched_transactions = enrich_sales_data(filtered_transactions, product_map)
-        print(f"      Enriched transactions: {len(enriched_transactions)}")
-        print("[7/10] Saving enriched data to file...")
-        from utils.file_handler import save_enriched_data
+    print(f"Enriched transactions: {len(enriched)}")
 
-        save_enriched_data(enriched_transactions, "data/enriched_sales_data.csv")
-        print("      Enriched data file saved")
-        print("[8/10] Generating final report...")
+    # [7/10] Generate analytics
+    region_summary = region_wise_sales(enriched)
+    top_products = top_selling_products(enriched)
+    customers = customer_analysis(enriched)
+    peak_day = max(
+        enriched,
+        key=lambda x: x["Quantity"] * x["UnitPrice"],
+        default=None
+    )
 
-        print("\n========= FINAL EXECUTION SUMMARY =========")
-        print(f"Total Input Records      : {summary['total_input']}")
-        print(f"Invalid Records          : {summary['invalid']}")
-        print(f"Final Valid Transactions : {len(filtered_transactions)}")
-        print(f"Enriched Transactions    : {len(enriched_transactions)}")
+    # [8/10] Generate report
+    print("[6/10] Generating sales report...")
+    report_path = "output/sales_report.txt"
+    create_report_file(report_path, len(transactions))
 
-        print("[10/10] Process Complete!")
-        print("=" * 40)
+    write_region_summary(report_path, region_summary)
+    write_top_products(report_path, top_products)
+    write_customer_segments(report_path, customers)
+    write_peak_sales_day(report_path, peak_day)
 
-    except Exception as e:
-        print("❌ An unexpected error occurred.")
-        print(str(e))
+    print("[10/10] Process complete!")
+    print("Report saved at:", report_path)
 
 
 if __name__ == "__main__":
     main()
-    print("\n[10/10] Sales Analytics Pipeline Completed Successfully!")
-    print("===========================================")
-
-
 
 
 
